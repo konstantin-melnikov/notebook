@@ -1,0 +1,74 @@
+div
+  menu-component
+  section
+    .container.py-4
+      .row
+        .col
+          .alert(
+            v-if='message.body.length'
+            :class="'alert-'+message.type"
+          )
+            ul
+              li(v-for='item in message.body')
+                | {{item}}
+          table.table.table-dark.table-striped
+            thead
+              tr
+                th(v-for='column in columns')
+                  | {{column}}
+            tbody
+              tr(v-for='subscriber in subscribers.data')
+                td
+                  | {{subscriber.full_name}}
+                td
+                  | {{subscriber.phone}}
+                td
+                  | {{subscriber.email}}
+                td
+                  a.me-3(@click.prevent='editSubscriber(subscriber.id)', href='#')
+                    | Изменить
+                  a(@click.prevent='deleteSubscriber(subscriber.id)', href='#')
+                    | Удалить
+          nav.d-flex.justify-content-center(v-if='subscribers.last_page')
+            ul.pagination
+              li.page-item(
+                v-for='link in subscribers.links'
+                :class="{ 'active': link.active }"
+              )
+                a.page-link(
+                  v-if='link.url && link.active === false'
+                  :href='link.url'
+                  @click.prevent='fetch(link.url)'
+                  v-html='link.label'
+                )
+                span.page-link(
+                  v-else
+                  v-html='link.label'
+                )
+  .modal.show.fade.d-block(
+    tabindex='-1'
+    v-if='showModal'
+  )
+    .modal-dialog
+      .modal-content
+        .modal-header
+          h5.modal-title
+            | {{form.title}} {{subscriber.id}}
+          button.btn-close(
+            type='button'
+            data-bs-dismiss='modal'
+            aria-label='Close'
+            @click='showModal=false'
+          )
+        .modal-body
+          form
+            .input-group.mb-3(v-for='field in form.fields')
+              span.input-group-text
+                | {{field.label}}
+              input.form-control(
+                :type='field.type'
+                v-model='subscriber[field.name]'
+              )
+        .modal-footer
+          button.btn.btn-primary(type='button')
+            | {{form.button}}

@@ -1,5 +1,31 @@
 const mix = require('laravel-mix');
+const path = require('path');
 
+const dirSource = path.resolve(__dirname, 'resources/js');
+
+mix.webpackConfig({
+  module: {
+    rules: [
+      {
+        test: /\.pug/,
+        use: [
+          {
+            loader: 'html-loader'
+          },
+          {
+            loader: 'pug-html-loader'
+          }
+        ],
+      },
+    ],
+  },
+  resolve: {
+    alias: {
+      vue$: 'vue/dist/vue.esm.js',
+      '@': dirSource
+    }
+  }
+} || cb);
 /*
  |--------------------------------------------------------------------------
  | Mix Asset Management
