@@ -1914,10 +1914,35 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _template_pug__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./template.pug */ "./resources/js/components/menu/template.pug");
 /* harmony import */ var _template_pug__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_template_pug__WEBPACK_IMPORTED_MODULE_0__);
 
+var route = 'menu';
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   template: (_template_pug__WEBPACK_IMPORTED_MODULE_0___default()),
   data: function data() {
-    return {};
+    return {
+      menu: {}
+    };
+  },
+  methods: {
+    fetch: function fetch() {
+      var _this = this;
+
+      this.$http.get(route).then(function (response) {
+        _this.menu = response.data;
+      });
+    },
+    callMethod: function callMethod(options) {
+      if (options.action && typeof this[options.action] === 'function') {
+        this[options.action](options);
+      } else {
+        console.log('Method not found');
+      }
+    },
+    create: function create() {
+      this.$parent.createSubscriber();
+    }
+  },
+  created: function created() {
+    this.fetch();
   },
   mounted: function mounted() {}
 });
@@ -1944,7 +1969,7 @@ var config = {
   },
   adminApi: '/admin/',
   messages: {
-    autoHideIn: 5000
+    autoHideIn: 7000
   }
 };
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (config);
@@ -2006,14 +2031,17 @@ http.interceptors.response.use(function (response) {
     }
   }
 
-  _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('showMessage', {
-    type: 'error',
-    body: response.data.message || response.data.error.message || 'Undefined error'
-  }); // Auto hiding/removing the message
+  if (response.status !== 422) {
+    _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('showMessage', {
+      type: 'error',
+      body: response.data.message || response.data.error.message || 'Undefined error'
+    }); // Auto hiding/removing the message
 
-  setTimeout(function () {
-    _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('hideMessage');
-  }, _config_app__WEBPACK_IMPORTED_MODULE_1__.default.messages.autoHideIn || 3000); // Do something with response error
+    setTimeout(function () {
+      _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('hideMessage');
+    }, _config_app__WEBPACK_IMPORTED_MODULE_1__.default.messages.autoHideIn || 3000);
+  } // Do something with response error
+
 
   return Promise.reject(error);
 });
@@ -2065,6 +2093,7 @@ var route = 'subscribers';
         email: 'Email',
         actions: ''
       },
+      errors: [],
       subscriber: [],
       form: []
     };
@@ -2073,6 +2102,12 @@ var route = 'subscribers';
     message: 'getMessage'
   })),
   methods: {
+    storeLastPage: function storeLastPage() {
+      if (this.subscribers && this.subscribers.links) {
+        var links = this.subscribers.links.slice(-2, -1);
+        _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('setPage', links[0].url);
+      }
+    },
     fetch: function fetch() {
       var _this = this;
 
@@ -2083,41 +2118,76 @@ var route = 'subscribers';
         _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('setPage', page);
       }
 
-      this.$http.get(url).then(function (_ref) {
-        var data = _ref.data;
-        _this.subscribers = data.subscribers;
+      this.$http.get(url).then(function (response) {
+        _this.subscribers = response.data.subscribers;
+      });
+    },
+    createSubscriber: function createSubscriber() {
+      var _this2 = this;
+
+      this.$http.get("".concat(route, "/create")).then(function (response) {
+        _this2.form = response.data.form;
+        _this2.subscriber = response.data.subscriber;
+
+        _this2.showForm();
+      });
+    },
+    storeSubscriber: function storeSubscriber() {
+      var _this3 = this;
+
+      this.$http.post("".concat(route), this.subscriber).then(function (response) {
+        _this3.hideForm();
+
+        _this3.storeLastPage();
+
+        _this3.fetch();
+      })["catch"](function (error) {
+        if (error.response.status == 422) {
+          _this3.errors = error.response.data.errors;
+        }
       });
     },
     deleteSubscriber: function deleteSubscriber(id) {
-      var _this2 = this;
+      var _this4 = this;
 
-      this.$http["delete"]("".concat(route, "/").concat(id)).then(function (_ref2) {
-        var data = _ref2.data;
+      this.$http["delete"]("".concat(route, "/").concat(id)).then(function (response) {
+        _this4.fetch();
 
-        _this2.fetch();
-
-        _this2.showMessage({
+        _this4.showMessage({
           type: 'success',
           body: 'Абонент успешно удален'
         });
       });
     },
     editSubscriber: function editSubscriber(id) {
-      var _this3 = this;
+      var _this5 = this;
 
-      this.$http.get("".concat(route, "/").concat(id, "/edit")).then(function (_ref3) {
-        var data = _ref3.data;
-        _this3.form = data.form;
-        _this3.subscriber = data.subscriber;
+      this.$http.get("".concat(route, "/").concat(id, "/edit")).then(function (response) {
+        _this5.form = response.data.form;
+        _this5.subscriber = response.data.subscriber;
+        _this5.form.title = _this5.form.title + ' ' + _this5.subscriber.id;
 
-        _this3.showForm('edit');
+        _this5.showForm();
       });
     },
     updateSubscriber: function updateSubscriber(id) {
-      console.log(id);
+      var _this6 = this;
+
+      this.$http.patch("".concat(route, "/").concat(id), this.subscriber).then(function (response) {
+        _this6.hideForm();
+
+        _this6.fetch();
+      })["catch"](function (error) {
+        if (error.response.status == 422) {
+          _this6.errors = error.response.data.errors;
+        }
+      });
     },
-    showForm: function showForm(action) {
+    showForm: function showForm() {
       this.showModal = true;
+    },
+    hideForm: function hideForm() {
+      this.showModal = false;
     },
     showMessage: function showMessage(message) {
       _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('showMessage', {
@@ -2127,6 +2197,11 @@ var route = 'subscribers';
       setTimeout(function () {
         _store__WEBPACK_IMPORTED_MODULE_2__.default.commit('hideMessage');
       }, _config_app__WEBPACK_IMPORTED_MODULE_3__.default.messages.autoHideIn || 3000);
+    },
+    clearError: function clearError(fieldName) {
+      if (this.errors && this.errors[fieldName]) {
+        this.$delete(this.errors, fieldName);
+      }
     }
   },
   created: function created() {
@@ -2237,7 +2312,7 @@ var mutations = {
 /***/ ((module) => {
 
 // Module
-var code = "<nav class=\"navbar border-bottom\"><div class=\"container\"><a class=\"navbar-brand\" href=\"/\">The test project on Laravel</a><span class=\"navbar-text ms-auto\">Hello</span><ul class=\"navbar-nav ms-3\"><li class=\"nav-item\"><a class=\"nav-link\" href=\"/logout\">Logout</a></li></ul></div></nav>";
+var code = "<nav class=\"navbar navbar-expand\" v-if=\"menu\"><div class=\"container-fluid\"><div class=\"border d-flex px-2\"><a class=\"navbar-brand\" href=\"/\">{{menu.title}}</a><ul class=\"navbar-nav me-auto\"><li class=\"nav-item\" v-for=\"item in menu.items\"><a class=\"nav-link\" v-if=\"item.url\" :href=\"item.url\">{{item.title}}</a><button class=\"btn btn-link\" v-else=\"v-else\" @click.prevent=\"callMethod(item)\">{{item.title}}</button></li></ul></div></div></nav>";
 // Exports
 module.exports = code;
 
@@ -2250,7 +2325,7 @@ module.exports = code;
 /***/ ((module) => {
 
 // Module
-var code = "<div><menu-component></menu-component><section><div class=\"container py-4\"><div class=\"row\"><div class=\"col\"><div class=\"alert\" v-if=\"message.body.length\" :class=\"'alert-'+message.type\"><ul><li v-for=\"item in message.body\">{{item}}</li></ul></div><table class=\"table table-dark table-striped\"><thead><tr><th v-for=\"column in columns\">{{column}}</th></tr></thead><tbody><tr v-for=\"subscriber in subscribers.data\"><td>{{subscriber.full_name}}</td><td>{{subscriber.phone}}</td><td>{{subscriber.email}}</td><td><a class=\"me-3\" @click.prevent=\"editSubscriber(subscriber.id)\" href=\"#\">Изменить</a><a @click.prevent=\"deleteSubscriber(subscriber.id)\" href=\"#\">Удалить</a></td></tr></tbody></table><nav class=\"d-flex justify-content-center\" v-if=\"subscribers.last_page\"><ul class=\"pagination\"><li class=\"page-item\" v-for=\"link in subscribers.links\" :class=\"{ 'active': link.active }\"><a class=\"page-link\" v-if=\"link.url &amp;&amp; link.active === false\" :href=\"link.url\" @click.prevent=\"fetch(link.url)\" v-html=\"link.label\"></a><span class=\"page-link\" v-else=\"v-else\" v-html=\"link.label\"></span></li></ul></nav></div></div></div></section><div class=\"modal show fade d-block\" tabindex=\"-1\" v-if=\"showModal\"><div class=\"modal-dialog\"><div class=\"modal-content\"><div class=\"modal-header\"><h5 class=\"modal-title\">{{form.title}} {{subscriber.id}}</h5><button class=\"btn-close\" type=\"button\" data-bs-dismiss=\"modal\" aria-label=\"Close\" @click=\"showModal=false\"></button></div><div class=\"modal-body\"><form><div class=\"input-group mb-3\" v-for=\"field in form.fields\"><span class=\"input-group-text\">{{field.label}}</span><input class=\"form-control\" :type=\"field.type\" v-model=\"subscriber[field.name]\"/></div></form></div><div class=\"modal-footer\"><button class=\"btn btn-primary\" type=\"button\">{{form.button}}</button></div></div></div></div></div>";
+var code = "<div><menu-component></menu-component><section><div class=\"container py-4\"><div class=\"row\"><div class=\"col\"><div class=\"alert\" v-if=\"message.body.length\" :class=\"'alert-'+message.type\"><ul><li v-for=\"item in message.body\">{{item}}</li></ul></div><table class=\"table table-dark table-striped\"><thead><tr><th v-for=\"column in columns\">{{column}}</th></tr></thead><tbody><tr v-for=\"subscriber in subscribers.data\"><td>{{subscriber.full_name}}</td><td>{{subscriber.phone}}</td><td>{{subscriber.email}}</td><td><a class=\"me-3\" @click.prevent=\"editSubscriber(subscriber.id)\" href=\"#\">Изменить</a><a @click.prevent=\"deleteSubscriber(subscriber.id)\" href=\"#\">Удалить</a></td></tr></tbody></table><nav class=\"d-flex justify-content-center\" v-if=\"subscribers.last_page\"><ul class=\"pagination\"><li class=\"page-item\" v-for=\"link in subscribers.links\" :class=\"{ 'active': link.active }\"><a class=\"page-link\" v-if=\"link.url &amp;&amp; link.active === false\" :href=\"link.url\" @click.prevent=\"fetch(link.url)\" v-html=\"link.label\"></a><span class=\"page-link\" v-else=\"v-else\" v-html=\"link.label\"></span></li></ul></nav></div></div></div></section><div class=\"modal show fade d-block\" tabindex=\"-1\" v-if=\"showModal\"><div class=\"modal-dialog\"><div class=\"modal-content\"><div class=\"modal-header\"><h5 class=\"modal-title text-dark\">{{form.title}}</h5><button class=\"btn-close\" type=\"button\" data-bs-dismiss=\"modal\" aria-label=\"Close\" @click=\"hideForm()\"></button></div><div class=\"modal-body\"><form><div class=\"input-group mb-3\" v-for=\"field in form.fields\"><span class=\"input-group-text\">{{field.label}}</span><input class=\"form-control\" :type=\"field.type\" v-model=\"subscriber[field.name]\" @click=\"clearError(field.name)\"/><div class=\"alert alert-danger w-100\" v-if=\"errors &amp;&amp; errors[field.name]\">{{errors[field.name][0]}}</div></div></form></div><div class=\"modal-footer\"><button class=\"btn btn-primary\" type=\"button\" v-if=\"form.type=='edit'\" @click.prevent=\"updateSubscriber(subscriber.id)\">{{form.button}}</button><button class=\"btn btn-primary\" type=\"button\" v-if=\"form.type=='create'\" @click.prevent=\"storeSubscriber()\">{{form.button}}</button></div></div></div></div></div>";
 // Exports
 module.exports = code;
 

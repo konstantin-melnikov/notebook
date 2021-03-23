@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\SubscriberRequest;
 use App\Models\Subscriber;
+use App\Http\Resources\SubscriberResource;
+use App\Http\Resources\Forms\SubscriberEditCollection;
 
 class SubscriberController extends Controller
 {
@@ -14,6 +17,14 @@ class SubscriberController extends Controller
      */
     public function index()
     {
+        /**
+         * @todo Fix pagination issue with SubscriberCollection
+         * @example return [
+         *   'data' => new SubscriberCollection(
+         *       Subscriber::where('user_id', auth()->id())->paginate(10)
+         *   )
+         * ];
+         */ 
         return [
             'subscribers' => Subscriber::where('user_id', auth()->id())->paginate(10)
         ];
@@ -26,7 +37,19 @@ class SubscriberController extends Controller
      */
     public function create()
     {
-        //
+        $subscriber = new Subscriber;
+        return response()->json(
+            [
+                'form' => [
+                    'type'  => 'create',
+                    'title' => 'Новая запись',
+                    'button' => 'Добавить',
+                    'fields' => $subscriber->getFormFields()
+                ],
+                'subscriber' => new SubscriberResource($subscriber)
+            ],
+            200
+        );
     }
 
     /**
@@ -35,20 +58,10 @@ class SubscriberController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(SubscriberRequest $request)
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
+        $subscriber = auth()->user()->subscribers()->create($request->validated());
+        return $subscriber;
     }
 
     /**
@@ -59,21 +72,16 @@ class SubscriberController extends Controller
      */
     public function edit($id)
     {
-        $subscriber = Subscriber::find($id);
-        if (!$subscriber) {
-            return abort(404, 'Абонент не найден');
-        }
-        if ($subscriber->user_id !== auth()->id()) {
-            return abort(403, 'Это не ваш абонент');
-        }
+        $subscriber = $this->_getSubscriberOrReturnFailed($id);
         return response()->json(
             [
                 'form' => [
+                    'type'  => 'edit',
                     'title' => 'Изменить запись',
                     'button' => 'Сохранить',
                     'fields' => $subscriber->getFormFields()
                 ],
-                'subscriber' => $subscriber
+                'subscriber' => new SubscriberResource($subscriber)
             ],
             200
         );
@@ -86,9 +94,11 @@ class SubscriberController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(SubscriberRequest $request, $id)
     {
-        //
+        $subscriber = $this->_getSubscriberOrReturnFailed($id);
+        $subscriber->update($request->validated());
+        return $subscriber;
     }
 
     /**
@@ -99,6 +109,13 @@ class SubscriberController extends Controller
      */
     public function destroy($id)
     {
+        $subscriber = $this->_getSubscriberOrReturnFailed($id);
+        $subscriber->delete();
+        return response()->json(null, 204);
+    }
+
+    private function _getSubscriberOrReturnFailed($id)
+    {
         $subscriber = Subscriber::find($id);
         if (!$subscriber) {
             return abort(404, 'Абонент не найден');
@@ -106,7 +123,6 @@ class SubscriberController extends Controller
         if ($subscriber->user_id !== auth()->id()) {
             return abort(403, 'Это не ваш абонент');
         }
-        $subscriber->delete();
-        return response()->json(null, 204);
+        return $subscriber;
     }
 }

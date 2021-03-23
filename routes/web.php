@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotebookController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\MenuController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,9 +16,13 @@ use App\Http\Controllers\SubscriberController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::middleware('auth')->resource('/admin/subscribers', SubscriberController::class);
-
-Route::get('/', [NotebookController::class, 'index'])->name('notebook')->middleware('auth');
+Route::middleware('auth')->group(function () {
+    Route::prefix('admin')->group(function() {
+        Route::resource('/subscribers', SubscriberController::class);
+        Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+    });
+    Route::get('/', [NotebookController::class, 'index'])->name('notebook');
+});
 
 Route::get('/login', [AuthController::class, 'loginForm'])->name('loginForm');
 Route::post('/login', [AuthController::class, 'auth'])->name('auth');

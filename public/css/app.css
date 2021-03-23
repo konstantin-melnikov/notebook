@@ -207,11 +207,11 @@ sup {
 }
 
 a {
-  color: #0d6efd;
+  color: #e9ecef;
   text-decoration: underline;
 }
 a:hover {
-  color: #0a58ca;
+  color: #babdbf;
 }
 
 a:not([href]):not([class]), a:not([href]):not([class]):hover {
@@ -3359,11 +3359,11 @@ textarea.form-control-lg {
 
 .btn-link {
   font-weight: 400;
-  color: #0d6efd;
+  color: #e9ecef;
   text-decoration: underline;
 }
 .btn-link:hover {
-  color: #0a58ca;
+  color: #babdbf;
 }
 .btn-link:disabled, .btn-link.disabled {
   color: #6c757d;
@@ -4532,7 +4532,7 @@ textarea.form-control-lg {
 }
 .page-link:hover {
   z-index: 2;
-  color: #0a58ca;
+  color: #babdbf;
   background-color: #e9ecef;
   border-color: #dee2e6;
 }
@@ -10396,4 +10396,7 @@ textarea.form-control-lg {
   .d-print-none {
     display: none !important;
   }
+}
+.navbar-nav .btn.btn-link {
+  text-decoration: none;
 }

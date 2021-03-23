@@ -3,6 +3,7 @@
 @section('title', config('app.name') . ' - ' . 'Вход')
 
 @section('content')
+    <h1 class="mx-auto">Записная книжка</h1>
     <div class="card m-auto" style="max-width: 24rem;">
         <div class="card-header">Вход</div>
         <div class="card-body">
@@ -38,7 +39,7 @@
                     placeholder="Password"
                 >
                 <button type="submit" class="btn btn-primary mb-3 w-100">Войти</button>
-                <a href="{{ route('registerForm') }}">Создать аккаунт</a>
+                <a class="d-block text-center" href="{{ route('registerForm') }}">Создать аккаунт</a>
         </form>
         </div>
     </div>

@@ -52,13 +52,13 @@ div
     .modal-dialog
       .modal-content
         .modal-header
-          h5.modal-title
-            | {{form.title}} {{subscriber.id}}
+          h5.modal-title.text-dark
+            | {{form.title}}
           button.btn-close(
             type='button'
             data-bs-dismiss='modal'
             aria-label='Close'
-            @click='showModal=false'
+            @click='hideForm()'
           )
         .modal-body
           form
@@ -68,7 +68,20 @@ div
               input.form-control(
                 :type='field.type'
                 v-model='subscriber[field.name]'
+                @click='clearError(field.name)'
               )
+              .alert.alert-danger.w-100(v-if='errors && errors[field.name]')
+                | {{errors[field.name][0]}}
         .modal-footer
-          button.btn.btn-primary(type='button')
+          button.btn.btn-primary(
+            type='button'
+            v-if="form.type=='edit'"
+            @click.prevent='updateSubscriber(subscriber.id)'
+          )
+            | {{form.button}}
+          button.btn.btn-primary(
+            type='button'
+            v-if="form.type=='create'"
+            @click.prevent='storeSubscriber()'
+          )
             | {{form.button}}

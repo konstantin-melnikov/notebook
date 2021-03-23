@@ -21,6 +21,7 @@ export default {
         email: 'Email',
         actions: ''
       },
+      errors: [],
       subscriber: [],
       form: [],
     }
@@ -31,35 +32,70 @@ export default {
     })
   },
   methods: {
+    storeLastPage() {
+      if (this.subscribers && this.subscribers.links) {
+        const links = this.subscribers.links.slice(-2, -1)
+        store.commit('setPage', links[0].url)
+      }
+    },
     fetch (page = null) {
       const url = page || store.getters.getPage || route
       if (page) {
         store.commit('setPage', page)
       }
-      this.$http.get(url).then(({ data }) => {
-        this.subscribers = data.subscribers
+      this.$http.get(url).then(response => {
+        this.subscribers = response.data.subscribers
+      })
+    },
+    createSubscriber () {
+      this.$http.get(`${route}/create`).then(response => {
+        this.form = response.data.form
+        this.subscriber = response.data.subscriber
+        this.showForm()
+      })
+    },
+    storeSubscriber () {
+      this.$http.post(`${route}`, this.subscriber).then(response => {
+        this.hideForm()
+        this.storeLastPage()
+        this.fetch()
+      }).catch(error => {
+        if (error.response.status == 422) {
+          this.errors = error.response.data.errors
+        }
       })
     },
     deleteSubscriber (id) {
-      this.$http.delete(`${route}/${id}`).then(({ data }) => {
+      this.$http.delete(`${route}/${id}`).then(response => {
         this.fetch()
         this.showMessage({type: 'success', body: 'Абонент успешно удален'})
       })
     },
     editSubscriber (id) {
-      this.$http.get(`${route}/${id}/edit`).then(({ data }) => {
-        this.form = data.form
-        this.subscriber = data.subscriber
-        this.showForm('edit')
+      this.$http.get(`${route}/${id}/edit`).then(response => {
+        this.form = response.data.form
+        this.subscriber = response.data.subscriber
+        this.form.title = this.form.title + ' ' + this.subscriber.id
+        this.showForm()
       })
     },
     updateSubscriber (id) {
-      console.log(id)
+      this.$http.patch(`${route}/${id}`, this.subscriber).then(response => {
+        this.hideForm()
+        this.fetch()
+      }).catch(error => {
+        if (error.response.status == 422) {
+          this.errors = error.response.data.errors
+        }
+      })
     },
-    showForm(action) {
+    showForm () {
       this.showModal = true
     },
-    showMessage(message) {
+    hideForm () {
+      this.showModal = false
+    },
+    showMessage (message) {
       store.commit(
         'showMessage',
         { type: message.type, body: message.body }
@@ -67,6 +103,11 @@ export default {
       setTimeout(function () {
         store.commit('hideMessage')
       }, config.messages.autoHideIn || 3000)
+    },
+    clearError (fieldName) {
+      if (this.errors && this.errors[fieldName]) {
+        this.$delete(this.errors, fieldName);
+      }
     }
   },
   created () {

@@ -1,10 +1,17 @@
-nav.navbar.border-bottom
-  .container
-    a.navbar-brand(href="/")
-      | The test project on Laravel
-    span.navbar-text.ms-auto
-      | Hello
-    ul.navbar-nav.ms-3
-      li.nav-item
-        a.nav-link(href="/logout")
-          | Logout
+nav.navbar.navbar-expand(v-if='menu')
+  .container-fluid
+    div.border.d-flex.px-2
+      a.navbar-brand(href='/')
+        | {{menu.title}}
+      ul.navbar-nav.me-auto
+        li.nav-item(v-for='item in menu.items')
+          a.nav-link(
+            v-if='item.url'
+            :href='item.url'
+          )
+            | {{item.title}}
+          button.btn.btn-link(
+            v-else
+            @click.prevent='callMethod(item)'
+          )
+            | {{item.title}}

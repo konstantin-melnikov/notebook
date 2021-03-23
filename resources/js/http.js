@@ -42,14 +42,16 @@ http.interceptors.response.use(function (response) {
       )
     }
   }
-  store.commit(
-    'showMessage',
-    { type: 'error', body: response.data.message || response.data.error.message || 'Undefined error' }
-  )
-  // Auto hiding/removing the message
-  setTimeout(function () {
-    store.commit('hideMessage')
-  }, config.messages.autoHideIn || 3000)
+  if (response.status !== 422) {
+    store.commit(
+      'showMessage',
+      { type: 'error', body: response.data.message || response.data.error.message || 'Undefined error' }
+    )
+    // Auto hiding/removing the message
+    setTimeout(function () {
+      store.commit('hideMessage')
+    }, config.messages.autoHideIn || 3000)
+  }
   // Do something with response error
   return Promise.reject(error)
 })
